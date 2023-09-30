@@ -2,6 +2,7 @@ package bnet
 
 import (
 	"btgo/biface"
+	"btgo/utils"
 	"errors"
 	"fmt"
 	"net"
@@ -30,7 +31,12 @@ func (s *Server) AddRouter(router biface.IRouter) {
 }
 
 func (s *Server) Start() {
-	fmt.Printf("IP: %s, Port: %d", s.IP, s.Port)
+	fmt.Printf("[START] Server name: %s,listenner at IP: %s, Port %d is starting\n", s.Name, s.IP, s.Port)
+	fmt.Printf("[BTGO] Version: %s, MaxConnSize: %d,  MaxPacketSize: %d\n",
+		utils.GlobalObject.Version,
+		utils.GlobalObject.MaxConnSize,
+		utils.GlobalObject.MaxPacketSize)
+
 	go func() {
 		fmt.Println("获取链接成功")
 		addr, err := net.ResolveTCPAddr(s.Network, fmt.Sprintf("%s:%d", s.IP, s.Port))
@@ -82,11 +88,13 @@ func (s *Server) Serve() {
 }
 
 func NewServer(name string) biface.IServer {
+	utils.GlobalObject.Reload()
+
 	s := &Server{
-		Name:    name,
+		Name:    utils.GlobalObject.Name,
 		Network: "tcp4",
-		IP:      "0.0.0.0",
-		Port:    7777,
+		IP:      utils.GlobalObject.Host,
+		Port:    utils.GlobalObject.Port,
 		Router:  nil,
 	}
 	return s
