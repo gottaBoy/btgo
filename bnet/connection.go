@@ -2,7 +2,9 @@ package bnet
 
 import (
 	"btgo/biface"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 )
 
@@ -65,28 +67,40 @@ func (c *Connection) StartReader() {
 	defer c.Close()
 	for {
 		// 读取请求数据
-		buf := make([]byte, 512)
-		_, err := c.Conn.Read(buf)
-		if err != nil {
-			fmt.Println("Recv buf err ", err)
+		dp := NewDataPack()
+
+		headData := make([]byte, dp.GetHeadLen())
+		if _, err := io.ReadFull(c.Conn, headData); err != nil {
+			fmt.Println("Read msg err ", err)
 			c.ExitBufChan <- true
 			continue
 		}
+		msg, err := dp.UnPack(headData)
+		if err != nil {
+			fmt.Println("unpack error ", err)
+			c.ExitBufChan <- true
+			continue
+		}
+		var data []byte
+		if msg.GetDataLen() > 0 {
+			data = make([]byte, msg.GetDataLen())
+			if _, err := io.ReadFull(c.Conn, data); err != nil {
+				fmt.Println("read msg data error ", err)
+				c.ExitBufChan <- true
+				continue
+			}
+		}
+		msg.SetData(data)
 		// 处理请求
 		req := Request{
 			conn: c,
-			data: buf,
+			msg:  msg,
 		}
 		go func(request biface.IRequest) {
 			c.Router.PreHandler(request)
 			c.Router.Handler(request)
 			c.Router.PostHandler(request)
 		}(&req)
-		// if err := c.handler(c.Conn, buf, cnt); err != nil {
-		// 	fmt.Println("ConnId ", c.ConnId, "handler is error!")
-		// 	c.ExitBufChan <- true
-		// 	return
-		// }
 	}
 }
 
@@ -100,4 +114,26 @@ func (c *Connection) GetConn() *net.TCPConn {
 
 func (c *Connection) GetConnId() uint32 {
 	return c.ConnId
+}
+
+func (c *Connection) SendMsg(msgId uint32, data []byte) error {
+	if c.isClosed == true {
+		return errors.New("Connection closed when send msg")
+	}
+	// 将data封包，并且发送
+	dp := NewDataPack()
+	msg, err := dp.Pack(NewMessage(msgId, data))
+	if err != nil {
+		fmt.Println("Pack error msg id = ", msgId)
+		return errors.New("Pack error msg ")
+	}
+
+	// 写回客户端
+	if _, err := c.Conn.Write(msg); err != nil {
+		fmt.Println("Write msg id ", msgId, " error ")
+		c.ExitBufChan <- true
+		return errors.New("conn Write error")
+	}
+
+	return nil
 }

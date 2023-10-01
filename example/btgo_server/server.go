@@ -12,7 +12,8 @@ type PingRouter struct {
 
 func (pr *PingRouter) PreHandler(request biface.IRequest) {
 	fmt.Println("Call Router PreHandler")
-	_, err := request.GetConn().GetConn().Write([]byte("before ping ... \n"))
+	// _, err := request.GetConn().GetConn().Write([]byte("before ping ... \n"))
+	err := request.GetConn().SendMsg(request.GetMsgId(), []byte("before ping ... \n"))
 	if err != nil {
 		fmt.Println("call back ping ping ping error")
 	}
@@ -20,7 +21,9 @@ func (pr *PingRouter) PreHandler(request biface.IRequest) {
 
 func (this *PingRouter) Handler(request biface.IRequest) {
 	fmt.Println("Call PingRouter Handler")
-	_, err := request.GetConn().GetConn().Write([]byte("ping...ping...ping \n"))
+	fmt.Println("recv from client : msgId=", request.GetMsgId(), ", data=", string(request.GetData()))
+	// _, err := request.GetConn().GetConn().Write([]byte("ping...ping...ping \n"))
+	err := request.GetConn().SendMsg(1, []byte("ping...ping...ping \n"))
 	if err != nil {
 		fmt.Println("call back ping ping ping error")
 	}
@@ -28,7 +31,8 @@ func (this *PingRouter) Handler(request biface.IRequest) {
 
 func (this *PingRouter) PostHandler(request biface.IRequest) {
 	fmt.Println("Call Router PostHandler")
-	_, err := request.GetConn().GetConn().Write([]byte("After ping ..... \n"))
+	// _, err := request.GetConn().GetConn().Write([]byte("After ping ..... \n"))
+	err := request.GetConn().SendMsg(request.GetMsgId(), []byte("After ping ..... \n"))
 	if err != nil {
 		fmt.Println("call back ping ping ping error")
 	}

@@ -1,0 +1,7 @@
+{
+    "Name": "BTGO Server",
+    "Host": "127.0.0.1",
+    "Port": 7777,
+    "MaxConnSize": 3,
+    "MaxPacketSize": 2048    
+  }
