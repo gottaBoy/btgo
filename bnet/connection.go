@@ -2,6 +2,7 @@ package bnet
 
 import (
 	"btgo/biface"
+	"btgo/utils"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ type Connection struct {
 	// Router      biface.IRouter
 	MsgHandler  biface.IMsgHandler
 	ExitBufChan chan bool
+	msgChan     chan []byte
 }
 
 func NewConn(conn *net.TCPConn, connId uint32, msgHandler biface.IMsgHandler) *Connection {
@@ -27,11 +29,13 @@ func NewConn(conn *net.TCPConn, connId uint32, msgHandler biface.IMsgHandler) *C
 		// Router:      router,
 		MsgHandler:  msgHandler,
 		ExitBufChan: make(chan bool, 1),
+		msgChan:     make(chan []byte),
 	}
 }
 
 func (c *Connection) Open() {
 	go c.StartReader()
+	go c.StartWriter()
 	for {
 		select {
 		case <-c.ExitBufChan:
@@ -103,7 +107,29 @@ func (c *Connection) StartReader() {
 		// 	c.Router.Handler(request)
 		// 	c.Router.PostHandler(request)
 		// }(&req)
-		go c.MsgHandler.DoMsgHandler(&req)
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			//已经启动工作池机制，将消息交给Worker处理
+			c.MsgHandler.SendMsgToTaskQueue(&req)
+		} else {
+			//从绑定好的消息和对应的处理方法中执行对应的Handle方法
+			go c.MsgHandler.DoMsgHandler(&req)
+		}
+	}
+}
+
+func (c *Connection) StartWriter() {
+	fmt.Println(c.ConnId, " conn start writer!")
+	defer fmt.Println(c.GetAdrr(), "conn writer is exited!")
+	for {
+		select {
+		case data := <-c.msgChan:
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Println("Send Data error:, ", err, " Conn Writer exit")
+				return
+			}
+		case <-c.ExitBufChan:
+			return
+		}
 	}
 }
 
@@ -132,11 +158,12 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	}
 
 	// 写回客户端
-	if _, err := c.Conn.Write(msg); err != nil {
-		fmt.Println("Write msg id ", msgId, " error ")
-		c.ExitBufChan <- true
-		return errors.New("conn Write error")
-	}
+	// if _, err := c.Conn.Write(msg); err != nil {
+	// 	fmt.Println("Write msg id ", msgId, " error ")
+	// 	c.ExitBufChan <- true
+	// 	return errors.New("conn Write error")
+	// }
+	c.msgChan <- msg
 
 	return nil
 }

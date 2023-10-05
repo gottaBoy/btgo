@@ -40,6 +40,8 @@ func (s *Server) Start() {
 		utils.GlobalObject.MaxPacketSize)
 
 	go func() {
+		s.MsgHandler.StartWorkerPool()
+
 		fmt.Println("获取链接成功")
 		addr, err := net.ResolveTCPAddr(s.Network, fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {
