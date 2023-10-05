@@ -20,16 +20,46 @@ func main() {
 		return
 	}
 
+	dp := bnet.NewDataPack()
+	msg, _ := dp.Pack(bnet.NewMessage(0, []byte("BTGO V0.4 Client Test Message")))
+	cnt, err := conn.Write(msg)
+	fmt.Println("cnt: ", cnt)
+	if err != nil {
+		fmt.Println("write error err ", err)
+		return
+	}
+
+	//封装一个msg1包
+	msg1 := &bnet.Message{
+		Id:      0,
+		DataLen: 5,
+		Data:    []byte{'h', 'e', 'l', 'l', 'o'},
+	}
+
+	sendData1, err := dp.Pack(msg1)
+	if err != nil {
+		fmt.Println("client pack msg1 err:", err)
+		return
+	}
+
+	msg2 := &bnet.Message{
+		Id:      1,
+		DataLen: 7,
+		Data:    []byte{'w', 'o', 'r', 'l', 'd', '!', '!'},
+	}
+	sendData2, err := dp.Pack(msg2)
+	if err != nil {
+		fmt.Println("client temp msg2 err:", err)
+		return
+	}
+
+	//将sendData1，和 sendData2 拼接一起，组成粘包
+	sendData1 = append(sendData1, sendData2...)
+
+	//向服务器端写数据
+	conn.Write(sendData1)
+
 	for {
-
-		dp := bnet.NewDataPack()
-		msg, _ := dp.Pack(bnet.NewMessage(0, []byte("BTGO V0.4 Client Test Message")))
-		_, err := conn.Write(msg)
-		if err != nil {
-			fmt.Println("write error err ", err)
-			return
-		}
-
 		//先读出流中的head部分
 		headData := make([]byte, dp.GetHeadLen())
 		_, err = io.ReadFull(conn, headData) //ReadFull 会把msg填充满为止

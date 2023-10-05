@@ -13,17 +13,19 @@ type Connection struct {
 	ConnId   uint32
 	isClosed bool
 	// handler     biface.HandlerFunc
-	Router      biface.IRouter
+	// Router      biface.IRouter
+	MsgHandler  biface.IMsgHandler
 	ExitBufChan chan bool
 }
 
-func NewConn(conn *net.TCPConn, connId uint32, router biface.IRouter) *Connection {
+func NewConn(conn *net.TCPConn, connId uint32, msgHandler biface.IMsgHandler) *Connection {
 	return &Connection{
 		Conn:     conn,
 		ConnId:   connId,
 		isClosed: false,
 		// handler:     handler,
-		Router:      router,
+		// Router:      router,
+		MsgHandler:  msgHandler,
 		ExitBufChan: make(chan bool, 1),
 	}
 }
@@ -96,11 +98,12 @@ func (c *Connection) StartReader() {
 			conn: c,
 			msg:  msg,
 		}
-		go func(request biface.IRequest) {
-			c.Router.PreHandler(request)
-			c.Router.Handler(request)
-			c.Router.PostHandler(request)
-		}(&req)
+		// go func(request biface.IRequest) {
+		// 	c.Router.PreHandler(request)
+		// 	c.Router.Handler(request)
+		// 	c.Router.PostHandler(request)
+		// }(&req)
+		go c.MsgHandler.DoMsgHandler(&req)
 	}
 }
 

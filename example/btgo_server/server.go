@@ -19,17 +19,17 @@ func (pr *PingRouter) PreHandler(request biface.IRequest) {
 	}
 }
 
-func (this *PingRouter) Handler(request biface.IRequest) {
+func (pr *PingRouter) Handler(request biface.IRequest) {
 	fmt.Println("Call PingRouter Handler")
 	fmt.Println("recv from client : msgId=", request.GetMsgId(), ", data=", string(request.GetData()))
 	// _, err := request.GetConn().GetConn().Write([]byte("ping...ping...ping \n"))
-	err := request.GetConn().SendMsg(1, []byte("ping...ping...ping \n"))
+	err := request.GetConn().SendMsg(request.GetMsgId(), []byte("ping...ping...ping \n"))
 	if err != nil {
 		fmt.Println("call back ping ping ping error")
 	}
 }
 
-func (this *PingRouter) PostHandler(request biface.IRequest) {
+func (pr *PingRouter) PostHandler(request biface.IRequest) {
 	fmt.Println("Call Router PostHandler")
 	// _, err := request.GetConn().GetConn().Write([]byte("After ping ..... \n"))
 	err := request.GetConn().SendMsg(request.GetMsgId(), []byte("After ping ..... \n"))
@@ -40,6 +40,6 @@ func (this *PingRouter) PostHandler(request biface.IRequest) {
 
 func main() {
 	server := bnet.NewServer("[BTGO Server]")
-	server.AddRouter(&PingRouter{})
+	server.AddRouter(0, &PingRouter{})
 	server.Serve()
 }

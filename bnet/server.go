@@ -14,7 +14,8 @@ type Server struct {
 	Network string
 	IP      string
 	Port    int
-	Router  biface.IRouter
+	// Router  biface.IRouter
+	MsgHandler biface.IMsgHandler
 }
 
 func CallBackHandler(conn *net.TCPConn, data []byte, cnt int) error {
@@ -26,8 +27,9 @@ func CallBackHandler(conn *net.TCPConn, data []byte, cnt int) error {
 	return nil
 }
 
-func (s *Server) AddRouter(router biface.IRouter) {
-	s.Router = router
+func (s *Server) AddRouter(msgId uint32, router biface.IRouter) {
+	// s.Router = router
+	s.MsgHandler.AddRouter(msgId, router)
 }
 
 func (s *Server) Start() {
@@ -63,7 +65,7 @@ func (s *Server) Start() {
 			//TODO 设置最大连接
 			var connId uint32
 			connId = 0
-			newConn := NewConn(conn, connId, s.Router)
+			newConn := NewConn(conn, connId, s.MsgHandler)
 			connId++
 			// 启动处理任务
 			go newConn.Open()
@@ -95,7 +97,8 @@ func NewServer(name string) biface.IServer {
 		Network: "tcp4",
 		IP:      utils.GlobalObject.Host,
 		Port:    utils.GlobalObject.Port,
-		Router:  nil,
+		// Router:  nil,
+		MsgHandler: NewMsgHandler(),
 	}
 	return s
 }
