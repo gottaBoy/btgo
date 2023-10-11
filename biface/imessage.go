@@ -1,11 +1,12 @@
 package biface
 
 type IMessage interface {
-	GetMsgId() uint32
-	GetDataLen() uint32
-	GetData() []byte
+	GetDataLen() uint32 // Gets the length of the message data segment(获取消息数据段长度)
+	GetMsgId() uint32   // Gets the ID of the message(获取消息ID)
+	GetData() []byte    // Gets the content of the message(获取消息内容)
+	GetRawData() []byte // Gets the raw data of the message(获取原始数据)
 
-	SetMsgId(uint32)
-	SetDataLen(uint32)
-	SetData([]byte)
+	SetMsgId(uint32)   // Sets the ID of the message(设计消息ID)
+	SetData([]byte)    // Sets the content of the message(设计消息内容)
+	SetDataLen(uint32) // Sets the length of the message data segment(设置消息数据段长度)
 }

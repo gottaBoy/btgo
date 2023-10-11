@@ -38,8 +38,34 @@ func (pr *PingRouter) PostHandler(request biface.IRequest) {
 	}
 }
 
+// 创建连接的时候执行
+func DoConnStart(conn biface.IConnection) {
+	fmt.Println("DoConnStart is Called ... ")
+	fmt.Println("Set conn Name, Home done!")
+	conn.SetProperty("Name", "gottabay")
+	conn.SetProperty("Home", "https://github.com/gottaboy/btgo")
+	err := conn.SendMsg(0, []byte("DoConnStart ..."))
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+// 连接断开的时候执行
+func DoConnClose(conn biface.IConnection) {
+	if name, err := conn.GetProperty("Name"); err == nil {
+		fmt.Println("Conn Property Name = ", name)
+	}
+
+	if home, err := conn.GetProperty("Home"); err == nil {
+		fmt.Println("Conn Property Home = ", home)
+	}
+	fmt.Println("DoConnClose is Called ... ")
+}
+
 func main() {
-	server := bnet.NewServer("[BTGO Server]")
-	server.AddRouter(0, &PingRouter{})
-	server.Serve()
+	s := bnet.NewServer()
+	s.SetOnConnStart(DoConnStart)
+	s.SetOnConnStop(DoConnClose)
+	s.AddRouter(0, &PingRouter{})
+	s.Serve()
 }

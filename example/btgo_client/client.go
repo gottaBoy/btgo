@@ -43,7 +43,7 @@ func main() {
 	}
 
 	msg2 := &bnet.Message{
-		Id:      1,
+		Id:      0,
 		DataLen: 7,
 		Data:    []byte{'w', 'o', 'r', 'l', 'd', '!', '!'},
 	}
